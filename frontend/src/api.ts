@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 // The shape of the data we send (must match your Zod schema)
 export interface OrderData {
   poNumber: string;
@@ -16,17 +18,29 @@ export interface OrderData {
   }>;
 }
 
-export const generateEdi = async (order: OrderData) => {
-  // Use Vite's special import.meta.env for environment variables
-  // Fallback to localhost if the var is missing
-  const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  const API_URL = `${BASE_URL}/api/v1/generate-940`;
-  
-  // Debug log to ensure it's pointing to Azure in production
-  console.log("Calling API at:", API_URL);
+export interface AckData {
+  receivedControlNumber: string;
+  accepted: boolean;
+}
 
-  const response = await axios.post(API_URL, order, {
-    responseType: 'text' 
+export const generateEdi940 = async (order: OrderData) => {
+  const response = await axios.post(`${BASE_URL}/api/v1/generate-940`, order, {
+    responseType: 'text'
+  });
+  return response.data;
+};
+
+export const generateEdi997 = async (ack: AckData) => {
+  const response = await axios.post(`${BASE_URL}/api/v1/generate-997`, ack, {
+    responseType: 'text'
+  });
+  return response.data;
+};
+
+export const parseEdi850 = async (x12Raw: string) => {
+  // We send text/plain, get back JSON
+  const response = await axios.post(`${BASE_URL}/api/v1/parse-850`, x12Raw, {
+    headers: { 'Content-Type': 'text/plain' }
   });
   return response.data;
 };
