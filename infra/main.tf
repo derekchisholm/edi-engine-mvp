@@ -64,6 +64,12 @@ resource "azurerm_container_app" "app" {
       latest_revision = true
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image
+    ]
+  }
 }
 
 # 5. The Frontend UI
@@ -100,5 +106,11 @@ resource "azurerm_container_app" "ui" {
       percentage      = 100
       latest_revision = true
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image
+    ]
   }
 }
