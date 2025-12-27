@@ -10,8 +10,6 @@ const server: FastifyInstance = Fastify({
   logger: true // This gives you structured JSON logging out of the box (great for Splunk later)
 });
 
-server.register(cors, { origin: '*' });
-
 server.post('/api/v1/generate-940', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // 1. Validate the Header (API Key placeholder)
@@ -101,6 +99,7 @@ server.post('/api/v1/parse-850', async (request: FastifyRequest, reply: FastifyR
 // Start the Server
 const start = async () => {
   try {
+    await server.register(cors, { origin: '*' });
     // Listen on 0.0.0.0 to work inside Docker/Azure
     await server.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {
@@ -109,4 +108,6 @@ const start = async () => {
   }
 };
 
-start();
+if (require.main === module) {
+  start();
+}
