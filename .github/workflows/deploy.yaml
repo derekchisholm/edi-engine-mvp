@@ -1,0 +1,79 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual trigger button
+
+env:
+  ACR_NAME: ${{ secrets.ACR_NAME }}
+  RG_NAME: ${{ secrets.RESOURCE_GROUP }}
+  BACKEND_APP_NAME: edi-engine-api
+  FRONTEND_APP_NAME: edi-engine-ui
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout Code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Login to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 3. Login to ACR (So Docker can push)
+      - name: Login to ACR
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      # --- BACKEND PIPELINE ---
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/edi-engine:${{ github.sha }}
+          # We use the Commit SHA as the tag (Best Practice for traceability)
+
+      - name: Deploy Backend to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/edi-engine:${{ github.sha }}
+          targetPort: 3000
+          ingress: external
+          containerAppName: ${{ env.BACKEND_APP_NAME }}
+          resourceGroup: ${{ env.RG_NAME }}
+
+      # --- FRONTEND PIPELINE ---
+
+      # 4. Get Backend URL (Dynamic Fetch)
+      # We query the live Azure App to find out where the API lives
+      - name: Get Backend URL
+        id: get-url
+        run: |
+          URL=$(az containerapp show --name ${{ env.BACKEND_APP_NAME }} --resource-group ${{ env.RG_NAME }} --query properties.configuration.ingress.fqdn -o tsv)
+          echo "BACKEND_URL=https://$URL" >> $GITHUB_ENV
+          echo "Found Backend URL: https://$URL"
+
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/edi-ui:${{ github.sha }}
+          build-args: |
+            VITE_API_URL=${{ env.BACKEND_URL }}
+
+      - name: Deploy Frontend to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/edi-ui:${{ github.sha }}
+          targetPort: 80
+          ingress: external
+          containerAppName: ${{ env.FRONTEND_APP_NAME }}
+          resourceGroup: ${{ env.RG_NAME }}
