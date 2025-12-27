@@ -48,6 +48,9 @@ jobs:
           ingress: external
           containerAppName: ${{ env.BACKEND_APP_NAME }}
           resourceGroup: ${{ env.RG_NAME }}
+          registryUrl: ${{ env.ACR_NAME }}.azurecr.io
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
 
       # --- FRONTEND PIPELINE ---
 
@@ -77,3 +80,6 @@ jobs:
           ingress: external
           containerAppName: ${{ env.FRONTEND_APP_NAME }}
           resourceGroup: ${{ env.RG_NAME }}
+          registryUrl: ${{ env.ACR_NAME }}.azurecr.io
+          registryUsername: ${{ secrets.ACR_USERNAME }}
+          registryPassword: ${{ secrets.ACR_PASSWORD }}
