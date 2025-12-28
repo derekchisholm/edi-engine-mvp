@@ -5,13 +5,17 @@ import './App.css';
 export const Dashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
         const data = await getTransactions();
         setTransactions(data);
       } catch (err) {
+        console.error("Failed to load transactions", err);
+        setError("Failed to load transactions. Please check the backend connection.");
       } finally {
         setLoading(false);
       }
@@ -40,6 +44,20 @@ export const Dashboard: React.FC = () => {
   };
 
   if (loading && transactions.length === 0) return <div className="loading">Loading Dashboard...</div>;
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h2>Transactions</h2>
+          <span className="live-indicator" style={{ backgroundColor: '#ef4444' }}>● Error</span>
+        </div>
+        <div className="error-message" style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
