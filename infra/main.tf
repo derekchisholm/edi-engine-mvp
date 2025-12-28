@@ -44,7 +44,7 @@ resource "azurerm_container_app" "app" {
 
   template {
     container {
-      name   = "edi-engine"
+      name   = "${var.project_name}-api"
       image  = "${azurerm_container_registry.acr.login_server}/edi-engine:v1"
       cpu    = 0.25
       memory = "0.5Gi"
@@ -92,7 +92,7 @@ resource "azurerm_container_app" "ui" {
 
   template {
     container {
-      name   = "edi-ui"
+      name   = "${var.project_name}-ui"
       image  = "${azurerm_container_registry.acr.login_server}/edi-ui:v1"
       cpu    = 0.25
       memory = "0.5Gi"

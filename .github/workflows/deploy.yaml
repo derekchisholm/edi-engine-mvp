@@ -51,7 +51,6 @@ jobs:
           registryUrl: ${{ env.ACR_NAME }}.azurecr.io
           registryUsername: ${{ secrets.ACR_USERNAME }}
           registryPassword: ${{ secrets.ACR_PASSWORD }}
-          containerName: edi-engine
 
       # --- FRONTEND PIPELINE ---
 
@@ -84,4 +83,3 @@ jobs:
           registryUrl: ${{ env.ACR_NAME }}.azurecr.io
           registryUsername: ${{ secrets.ACR_USERNAME }}
           registryPassword: ${{ secrets.ACR_PASSWORD }}
-          containerName: edi-ui
