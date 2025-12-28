@@ -42,6 +42,11 @@ resource "azurerm_container_app" "app" {
     value = azurerm_container_registry.acr.admin_password
   }
 
+  secret {
+    name  = "cosmos-key"
+    value = azurerm_cosmosdb_account.db.primary_key
+  }
+
   template {
     container {
       name   = "${var.project_name}-api"
@@ -52,6 +57,16 @@ resource "azurerm_container_app" "app" {
       env {
         name  = "NODE_ENV"
         value = "production"
+      }
+
+      env {
+        name  = "COSMOS_ENDPOINT"
+        value = azurerm_cosmosdb_account.db.endpoint
+      }
+
+      env {
+        name        = "COSMOS_KEY"
+        secret_name = "cosmos-key"
       }
     }
   }

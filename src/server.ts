@@ -4,6 +4,7 @@ import { Edi940Generator } from './translator';
 import { Edi997Generator, AckInput } from './generators/997';
 import { Edi850Parser } from './parsers/850';
 import { OrderSchema, OrderInput } from './types';
+import { initDb, getContainer } from './db';
 import cors from '@fastify/cors';
 
 const server: FastifyInstance = Fastify({
@@ -12,27 +13,23 @@ const server: FastifyInstance = Fastify({
 
 server.post('/api/v1/generate-940', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    // 1. Validate the Header (API Key placeholder)
-    // In prod, you'd check request.headers['x-api-key'] here
-
-    // 2. Validate the Body
     const body = request.body;
-    
-    // Zod parsing - throws error if invalid
     const validatedOrder = OrderSchema.parse(body);
-
-    // 3. Generate X12
     const generator = new Edi940Generator();
     // In a real app, sender/receiver IDs would come from a database based on the API Key
     const ediOutput = generator.generate(validatedOrder, "MYBUSINESS", "THE3PL");
 
-    // 4. Return the result
-    // We set content-type to text/plain so the browser/client treats it as a file
+    await logTransaction({
+      type: '940',
+      direction: 'OUT',
+      businessNum: validatedOrder.poNumber,
+      payload: ediOutput
+    });
+
     reply.type('text/plain');
     return ediOutput;
 
   } catch (error) {
-    // Graceful Error Handling
     if (error instanceof z.ZodError) {
       reply.status(400).send({
         error: "Validation Failed",
@@ -48,10 +45,15 @@ server.post('/api/v1/generate-940', async (request: FastifyRequest, reply: Fasti
 server.post('/api/v1/generate-997', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const body = request.body as AckInput;
-    
     const generator = new Edi997Generator();
-    
     const ediOutput = generator.generate(body, "MYBUSINESS", "PARTNER");
+
+    await logTransaction({
+      type: '997',
+      direction: 'OUT',
+      businessNum: body.receivedControlNumber,
+      payload: ediOutput
+    });
 
     reply.type('text/plain');
     return ediOutput;
@@ -81,6 +83,13 @@ server.post('/api/v1/parse-850', async (request: FastifyRequest, reply: FastifyR
     const parser = new Edi850Parser();
     const jsonOutput = parser.parse(body);
 
+    await logTransaction({
+      type: '850',
+      direction: 'IN',
+      businessNum: jsonOutput.poNumber,
+      payload: jsonOutput
+    });
+
     reply.type('application/json');
     return jsonOutput;
   } catch (error) {
@@ -96,11 +105,91 @@ server.post('/api/v1/parse-850', async (request: FastifyRequest, reply: FastifyR
   }
 });
 
+// SAVE ORDER (From 850 Parser)
+server.post('/api/v1/orders', async (request, reply) => {
+  try {
+    const container = getContainer();
+    const orderData = request.body as any;
+    
+    // Add a timestamp if missing
+    if (!orderData.createdAt) {
+      orderData.createdAt = new Date().toISOString();
+    }
+    
+    // Cosmos requires an 'id'. Use poNumber or generate one.
+    if (!orderData.id) {
+        orderData.id = orderData.poNumber || `order-${Date.now()}`;
+    }
+
+    const { resource } = await container.items.create(orderData);
+    return resource;
+  } catch (err) {
+    request.log.error(err);
+    return reply.status(500).send({ error: "Failed to save order" });
+  }
+});
+
+// GET HISTORY
+server.get('/api/v1/orders', async (request, reply) => {
+  try {
+    const container = getContainer();
+    
+    // SQL Query to get recent orders
+    const querySpec = {
+      query: "SELECT * FROM c ORDER BY c.createdAt DESC OFFSET 0 LIMIT 50"
+    };
+
+    const { resources: items } = await container.items.query(querySpec).fetchAll();
+    return items;
+  } catch (err) {
+    request.log.error(err);
+    return reply.status(500).send({ error: "Failed to fetch history" });
+  }
+});
+
+server.get('/api/v1/transactions', async (request, reply) => {
+  try {
+    const container = getContainer();
+    const { resources } = await container.items
+      .query("SELECT * FROM c ORDER BY c.createdAt DESC OFFSET 0 LIMIT 100")
+      .fetchAll();
+    return resources;
+  } catch (err) {
+    request.log.error(err);
+    return reply.status(500).send({ error: "Failed to fetch transactions" });
+  }
+});
+
+const logTransaction = async (data: {
+  type: '850' | '940' | '997';
+  direction: 'IN' | 'OUT';
+  businessNum: string;
+  payload: any;
+}) => {
+  try {
+    const container = getContainer();
+    const record = {
+      ...data,
+      id: `${data.type}-${Date.now()}`, // Unique ID
+      stream: 'Test',                   // Default to Test for this MVP
+      validation: 'Valid',              // Assume valid if we processed it
+      ackStatus: 'Not Acknowledged',    // Default state
+      partner: 'Unknown',               // Would extract from ISA segment in real app
+      createdAt: new Date().toISOString()
+    };
+    await container.items.create(record);
+    console.log(`📝 Saved ${data.type} transaction: ${data.businessNum}`);
+  } catch (err) {
+    console.error("Failed to log transaction", err);
+  }
+};
+
 // Start the Server
 const start = async () => {
   try {
+    await initDb();
+
     await server.register(cors, { origin: '*' });
-    // Listen on 0.0.0.0 to work inside Docker/Azure
     await server.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {
     server.log.error(err);
