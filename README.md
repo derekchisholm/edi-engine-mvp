@@ -76,8 +76,6 @@ npm run dev
 
 Open http://localhost:5173 to view the app.
 
----
-
 ## ☁️ Deployment (DevOps)
 
 Deployment is fully automated. Pushing to the `main` branch triggers the GitHub Action.
@@ -106,21 +104,6 @@ The workflow defined in .github/workflows/deploy.yaml performs the following:
 3. Updates the Azure Container Apps to point to the specific Git SHA image.
 4. Injects the dynamic Backend URL into the Frontend build process at runtime.
 
----
-
 ## 📸 Screenshots
 
 (Add screenshots of your Dashboard here)
-
----
-
-### Pro Tip: The "Status Badge"
-
-At the very top of the markdown, you'll see a line starting with `![Build Status]`.
-
-To make this actually work (so it shows "Passing" in bright green):
-
-1.  Replace `<YOUR_GITHUB_USERNAME>` with your actual GitHub handle.
-2.  Replace `<YOUR_REPO_NAME>` with your repository name.
-
-This is a huge green flag for hiring managers. It proves the code in the repo actually builds.
