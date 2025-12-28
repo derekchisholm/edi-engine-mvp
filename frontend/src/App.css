@@ -1,11 +1,13 @@
-/* Reset & Base Setup */
+/* =========================================
+   1. RESET & BASE
+   ========================================= */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424; /* Dark background */
+  background-color: #242424;
 }
 
 body {
@@ -16,32 +18,75 @@ body {
 
 #root {
   width: 100%;
-  display: block; /* Removes the default flex/center behavior */
+  display: block;
 }
 
-/* --- Layout Container --- */
+/* =========================================
+   2. APP SHELL & NAVIGATION (New Router)
+   ========================================= */
+.app-shell {
+  max-width: 1600px; /* Wider for dashboard view */
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  display: flex;
+  flex-direction: column; 
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #333;
+  background-color: #1a1a1a;
+  margin-bottom: 2rem;
+}
+
+.brand h1 {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 2rem;
+  margin-left: -2px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #888;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  color: #ccc;
+}
+
+.nav-link.active {
+  color: #646cff;
+  border-bottom-color: #646cff;
+}
+
+.content-area {
+  padding: 0 2rem 2rem 2rem;
+  flex: 1;
+}
+
+/* =========================================
+   3. WORKBENCH LAYOUT (Generators/Inputs)
+   ========================================= */
 .container {
-  max-width: 1400px; /* Keeps it readable on ultra-wide monitors */
-  margin: 0 auto;    /* Centers the dashboard horizontally */
-  padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
-}
-
-/* --- Header & Tabs --- */
-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
-}
-
-h1 {
-  font-size: 2rem;
-  line-height: 1.1;
-  margin: 0;
 }
 
 .tabs {
@@ -67,20 +112,21 @@ h1 {
 }
 
 .tabs button.active {
-  background-color: #646cff; /* Vite Blue */
+  background-color: #646cff;
   color: white;
   border-color: #646cff;
 }
 
-/* --- Main Grid Layout --- */
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  align-items: start; /* Aligns tops of cards even if heights differ */
+  align-items: start;
 }
 
-/* --- Card Styles --- */
+/* =========================================
+   4. CARDS & FORMS
+   ========================================= */
 .card {
   background-color: #1a1a1a;
   padding: 2rem;
@@ -92,7 +138,6 @@ h1 {
   gap: 1.5rem;
 }
 
-/* Inputs */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -115,6 +160,7 @@ input, textarea {
   color: white;
   font-size: 1rem;
   transition: border-color 0.2s;
+  font-family: inherit;
 }
 
 input:focus, textarea:focus {
@@ -122,7 +168,6 @@ input:focus, textarea:focus {
   border-color: #646cff;
 }
 
-/* Buttons */
 button {
   border-radius: 6px;
   border: 1px solid transparent;
@@ -134,7 +179,7 @@ button {
   color: white;
   cursor: pointer;
   transition: border-color 0.25s;
-  width: 100%; /* Full width buttons for forms */
+  width: 100%;
 }
 
 button:hover {
@@ -149,76 +194,100 @@ button:disabled {
 .danger-btn { background-color: #d13438; }
 .danger-btn:hover { background-color: #a4262c; }
 
-/* --- Output Area Specifics --- */
-.output-card {
-  background-color: #111; /* Slightly darker for contrast */
+/* =========================================
+   5. DASHBOARD & TABLES (The Missing Part!)
+   ========================================= */
+.dashboard-container {
+  grid-column: 1 / -1;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #333;
+  padding: 0;
+  overflow: hidden;
 }
 
-.output-header {
+.dashboard-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #333;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
 }
 
-.output-actions {
-  display: flex;
-  gap: 0.5rem;
+.dashboard-header h2 { margin: 0; font-size: 1.25rem; }
+
+.live-indicator {
+  color: #4caf50;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: pulse 2s infinite;
 }
 
-.secondary-btn {
-  background-color: #333;
-  width: auto; /* Allow these to be small */
-  font-size: 0.8rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid #444;
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
-.secondary-btn:hover {
-  background-color: #444;
-}
-
-pre {
-  background: #000;
-  padding: 1rem;
-  border-radius: 6px;
-  border: 1px solid #333;
+.table-wrapper {
   overflow-x: auto;
-  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.9rem;
-  color: #4caf50; /* Matrix Green text */
+}
+
+.dashboard-table th {
   text-align: left;
-  min-height: 200px;
-  white-space: pre-wrap; /* Wrap long lines */
+  padding: 1rem 1.5rem;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 1px solid #333;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Toast */
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-100px);
-  background-color: #4caf50;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  transition: transform 0.3s ease-in-out;
-  z-index: 1000;
-  font-weight: bold;
-}
-.toast.show {
-  transform: translateX(-50%) translateY(0);
+.dashboard-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #2a2a2a;
+  color: #e0e0e0;
 }
 
-/* Responsive adjustment */
-@media (max-width: 900px) {
-  .main-layout {
-    grid-template-columns: 1fr; /* Stack them on tablets/phones */
-  }
+.dashboard-table tr:last-child td {
+  border-bottom: none;
 }
 
-/* --- File Mapper Styles --- */
+.dashboard-table tr:hover {
+  background-color: #252525;
+}
+
+/* Badges / Pills */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badge-green { background-color: rgba(76, 175, 80, 0.15); color: #66bb6a; border-color: rgba(76, 175, 80, 0.3); }
+.badge-red { background-color: rgba(244, 67, 54, 0.15); color: #ef5350; border-color: rgba(244, 67, 54, 0.3); }
+.badge-grey { background-color: rgba(158, 158, 158, 0.15); color: #bdbdbd; border-color: rgba(158, 158, 158, 0.3); }
+.badge-black { background-color: #000; color: #fff; border-color: #444; }
+.badge-white { background-color: #fff; color: #000; }
+
+.stream-indicator { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.dot-yellow { color: #fbc02d; }
+.mono-text { font-family: 'Consolas', monospace; color: #fff; }
+.date-text { color: #888; font-size: 0.85rem; }
+
+/* =========================================
+   6. FILE MAPPER & TOASTS
+   ========================================= */
 .dropzone {
   border: 2px dashed #444;
   border-radius: 8px;
@@ -228,86 +297,59 @@ pre {
   background-color: #1e1e1e;
   transition: all 0.2s;
 }
+.dropzone:hover, .dropzone.active { border-color: #646cff; background-color: #252525; }
 
-.dropzone:hover, .dropzone.active {
-  border-color: #646cff;
-  background-color: #252525;
-}
+.mapper-container { display: flex; flex-direction: column; gap: 1rem; }
+.mapping-area { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
 
-.mapper-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.mapping-area {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-/* Source Chips */
 .chip-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: #222;
-  border-radius: 8px;
-  min-height: 100px;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem;
+  background: #222; border-radius: 8px; min-height: 100px;
 }
 
 .source-chip {
-  background-color: #0078d4;
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 16px;
-  font-size: 0.85rem;
-  cursor: grab;
-  user-select: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background-color: #0078d4; color: white; padding: 0.4rem 0.8rem;
+  border-radius: 16px; font-size: 0.85rem; cursor: grab;
+  user-select: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.source-chip:active { cursor: grabbing; }
-
-/* Target Boxes */
-.target-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
+.target-list { display: flex; flex-direction: column; gap: 0.8rem; }
 .target-box {
-  background-color: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 0.8rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.2s;
+  background-color: #2a2a2a; border: 1px solid #444; border-radius: 6px;
+  padding: 0.8rem; display: flex; justify-content: space-between; align-items: center;
+}
+.target-box.over { border-color: #646cff; background-color: #333; }
+.target-box.filled { border-color: #4caf50; }
+
+.matched-chip { background-color: #2b88d8; color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; }
+.remove-x { margin-left: 8px; cursor: pointer; font-weight: bold; }
+
+.mapper-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
+
+/* Output & Code Areas */
+.output-card { background-color: #111; }
+.output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.output-actions { display: flex; gap: 0.5rem; }
+
+.secondary-btn { background-color: #333; width: auto; font-size: 0.8rem; padding: 0.4rem 0.8rem; border: 1px solid #444; }
+.secondary-btn:hover { background-color: #444; }
+
+pre {
+  background: #000; padding: 1rem; border-radius: 6px; border: 1px solid #333;
+  overflow-x: auto; font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem; color: #4caf50; min-height: 200px; white-space: pre-wrap;
 }
 
-.target-box.over {
-  background-color: #333;
-  border-color: #646cff;
+/* Toast */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+  background-color: #4caf50; color: white; padding: 10px 20px;
+  border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease-in-out; z-index: 1000; font-weight: bold;
 }
+.toast.show { transform: translateX(-50%) translateY(0); }
 
-.target-box.filled {
-  border-color: #4caf50;
-}
-
-.placeholder {
-  font-size: 0.8rem;
-  color: #666;
-  font-style: italic;
-}
-
-.matched-chip {
-  background-color: #2b88d8;
-  color: white;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
+/* Responsive */
+@media (max-width: 900px) {
+  .main-layout, .mapping-area { grid-template-columns: 1fr; }
 }
