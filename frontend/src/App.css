@@ -217,3 +217,97 @@ pre {
     grid-template-columns: 1fr; /* Stack them on tablets/phones */
   }
 }
+
+/* --- File Mapper Styles --- */
+.dropzone {
+  border: 2px dashed #444;
+  border-radius: 8px;
+  padding: 4rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  background-color: #1e1e1e;
+  transition: all 0.2s;
+}
+
+.dropzone:hover, .dropzone.active {
+  border-color: #646cff;
+  background-color: #252525;
+}
+
+.mapper-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mapping-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+/* Source Chips */
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #222;
+  border-radius: 8px;
+  min-height: 100px;
+}
+
+.source-chip {
+  background-color: #0078d4;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.source-chip:active { cursor: grabbing; }
+
+/* Target Boxes */
+.target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.target-box {
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.target-box.over {
+  background-color: #333;
+  border-color: #646cff;
+}
+
+.target-box.filled {
+  border-color: #4caf50;
+}
+
+.placeholder {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+}
+
+.matched-chip {
+  background-color: #2b88d8;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}

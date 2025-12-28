@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { generateEdi940, generateEdi997, parseEdi850, type OrderData, type AckData } from './api';
+import { FileMapper } from './FileMapper';
 import './App.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'940' | '997' | '850'>('940');
+  const [activeTab, setActiveTab] = useState<'940' | '997' | '850' | 'import'>('940');
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState<string>('');
   
@@ -91,6 +92,44 @@ function App() {
     document.body.removeChild(link);
   };
 
+  const handleBatchImport = async (mappedData: any[]) => {
+    setLoading(true);
+    setActiveTab('940');
+
+    let bigOutput = '';
+
+    try {
+      // Iterate through mapped rows and generate EDI for each
+      for (const [index, row] of mappedData.entries()) {
+        const payload: OrderData = {
+          poNumber: row.poNumber || `BATCH-${index}`,
+          shipTo: {
+            name: row.name || "Unknown",
+            address: row.address || "Unknown",
+            city: row.city || "Unknown",
+            state: row.state || "Unknown",
+            zip: row.zip || "00000"
+          },
+          items: [{
+            sku: row.sku || "MISC",
+            quantity: Number(row.quantity) || 1
+          }]
+        };
+
+        const result = await generateEdi940(payload);
+        bigOutput += `\n--- ORDER ${index + 1} (${payload.poNumber}) ---\n${result}`;
+      }
+      setOutput(bigOutput);
+      setShowToast(true); // Reuse toast to say "Done"
+    } catch (err) {
+      console.error(err);
+      setOutput("Error processing batch.");
+    } finally {
+      setLoading(false);
+    }
+
+  };
+
   // --- Render ---
 
   return (
@@ -104,6 +143,7 @@ function App() {
           <button className={activeTab === '940' ? 'active' : ''} onClick={() => {setActiveTab('940'); setOutput('')}}>Generate 940 (Ship)</button>
           <button className={activeTab === '997' ? 'active' : ''} onClick={() => {setActiveTab('997'); setOutput('')}}>Generate 997 (Ack)</button>
           <button className={activeTab === '850' ? 'active' : ''} onClick={() => {setActiveTab('850'); setOutput('')}}>Parse 850 (Order)</button>
+          <button className={activeTab === 'import' ? 'active' : ''} onClick={() => setActiveTab('import')}>Batch Import</button>
         </div>
       </header>
 
@@ -145,6 +185,13 @@ function App() {
                 placeholder="Paste X12 content here..."
               />
               <button style={{marginTop: '1rem'}} disabled={loading} onClick={handle850Parse}>Parse to JSON</button>
+            </div>
+          )}
+
+          {activeTab === 'import' && (
+            <div className="card" style={{gridColumn: '1 / -1'}}> {/* Full width card */}
+              <h2>Batch Processing</h2>
+              <FileMapper onComplete={handleBatchImport} />
             </div>
           )}
         </div>
