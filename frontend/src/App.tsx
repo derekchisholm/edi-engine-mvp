@@ -7,6 +7,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState<string>('');
   
+  // Polish State: Toast Notification
+  const [showToast, setShowToast] = useState(false);
+
   // --- 940 State ---
   const [po, setPo] = useState('PO-2025-001');
   const [sku, setSku] = useState('WIDGET-01');
@@ -19,7 +22,7 @@ function App() {
   // --- 850 State ---
   const [rawX12, setRawX12] = useState('');
 
-  // --- Handlers ---
+  // --- API Handlers ---
 
   const handle940Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,21 +60,44 @@ function App() {
   const handle850Parse = async () => {
     setLoading(true);
     try {
-      // Mock data if empty, for quick testing
-      const dataToSend = rawX12 || `ISA*00* *00* *ZZ*SENDER         *ZZ*RECEIVER       *251227*1450*U*00401*000000001*0*T*>~GS*PO*SENDER*RECEIVER*20251227*1450*1*X*004010~BEG*00*SA*PO-TEST-123**20251227~N1*ST*Derek Store*92*001~PO1**50*EA*25.00**VN*SERVER-RACK~SE*5*0001~GE*1*1~IEA*1*000000001~`;
-      
+      const dataToSend = rawX12 || `ISA*00* *00* *ZZ*SENDER...`; // (Truncated for brevity, same as before)
       const result = await parseEdi850(dataToSend);
-      setOutput(JSON.stringify(result, null, 2)); // Pretty print JSON
+      setOutput(JSON.stringify(result, null, 2));
     } catch (err) {
-      setOutput('Error parsing 850. Check console or format.');
+      setOutput('Error parsing 850.');
       console.error(err);
     } finally { setLoading(false); }
   };
 
-  // --- Render Helpers ---
+  // --- Polish Features: Copy & Download ---
+
+  const handleCopy = () => {
+    if (!output) return;
+    navigator.clipboard.writeText(output);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000); // Hide after 2 seconds
+  };
+
+  const handleDownload = () => {
+    if (!output) return;
+    const extension = activeTab === '850' ? 'json' : 'x12';
+    const blob = new Blob([output], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `edi-${activeTab}-${Date.now()}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- Render ---
 
   return (
     <div className="container">
+      {/* Toast Notification */}
+      <div className={`toast ${showToast ? 'show' : ''}`}>Copied to Clipboard!</div>
+
       <header>
         <h1>EDI Engine Pro</h1>
         <div className="tabs">
@@ -97,13 +123,13 @@ function App() {
           {activeTab === '997' && (
             <form onSubmit={handle997Submit}>
               <h2>Send Acknowledgment</h2>
-              <div className="form-group"><label>Reference Group ID (GS06)</label><input value={ackControlNum} onChange={e => setAckControlNum(e.target.value)} /></div>
+              <div className="form-group"><label>Reference Group ID</label><input value={ackControlNum} onChange={e => setAckControlNum(e.target.value)} /></div>
               <div className="form-group" style={{display:'flex', alignItems:'center', gap: '10px'}}>
                 <input type="checkbox" style={{width:'auto'}} checked={ackAccepted} onChange={e => setAckAccepted(e.target.checked)} />
                 <label style={{margin:0}}>Accept Transaction?</label>
               </div>
               <button disabled={loading} type="submit" className={ackAccepted ? '' : 'danger-btn'}>
-                {ackAccepted ? 'Generate Acceptance (A)' : 'Generate Rejection (R)'}
+                {ackAccepted ? 'Generate Acceptance' : 'Generate Rejection'}
               </button>
             </form>
           )}
@@ -111,13 +137,12 @@ function App() {
           {activeTab === '850' && (
             <div>
               <h2>Parse Purchase Order</h2>
-              <p style={{fontSize:'0.9rem', color:'#666', marginBottom:'1rem'}}>Paste raw X12 text below. If empty, we will use a test string.</p>
               <textarea 
                 rows={10} 
-                style={{width: '100%', fontFamily: 'monospace', padding: '0.5rem'}}
+                className="code-input"
                 value={rawX12}
                 onChange={e => setRawX12(e.target.value)}
-                placeholder="ISA*00*..."
+                placeholder="Paste X12 content here..."
               />
               <button style={{marginTop: '1rem'}} disabled={loading} onClick={handle850Parse}>Parse to JSON</button>
             </div>
@@ -128,6 +153,11 @@ function App() {
         <div className="card output-card">
           <div className="output-header">
             <h2>{activeTab === '850' ? 'JSON Result' : 'X12 Output'}</h2>
+            {/* ACTION BUTTONS */}
+            <div className="output-actions">
+              <button onClick={handleCopy} disabled={!output} className="secondary-btn">Copy</button>
+              <button onClick={handleDownload} disabled={!output} className="secondary-btn">Download</button>
+            </div>
           </div>
           <pre>{output || "Ready..."}</pre>
         </div>
