@@ -1,18 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { getTransactions, type Transaction } from './api';
 import './App.css';
-
-// Match the Backend Schema
-interface Transaction {
-  id: string;
-  type: '850' | '940' | '997';
-  direction: 'IN' | 'OUT';
-  validation: 'Valid' | 'Invalid';
-  stream: 'Test' | 'Live';
-  businessNum: string;
-  partner: string;
-  ackStatus: 'Accepted' | 'Rejected' | 'Not Acknowledged';
-  createdAt: string;
-}
 
 export const Dashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -21,15 +9,9 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Note: Ensure your Vite proxy points /api to your backend
-        // or use the full URL if hardcoded.
-        const res = await fetch('/api/v1/transactions');
-        if (res.ok) {
-          const data = await res.json();
-          setTransactions(data);
-        }
+        const data = await getTransactions();
+        setTransactions(data);
       } catch (err) {
-        console.error("Failed to fetch dashboard data", err);
       } finally {
         setLoading(false);
       }
