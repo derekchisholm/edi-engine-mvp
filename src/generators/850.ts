@@ -9,7 +9,9 @@ export class Edi850Generator {
     builder.addGS('PO', sender, receiver); // PO = Purchase Order
 
     input.transactionSets.forEach((po, index) => {
-      const controlNumber = (index + 1).toString().padStart(4, '0');
+      // Use provided control number or fallback to index
+      const st = po.transactionSetHeader?.[0];
+      const controlNumber = st?.transactionSetControlNumber || (index + 1).toString().padStart(4, '0');
       
       // Transaction Header
       builder.addST('850', controlNumber);
@@ -28,48 +30,41 @@ export class Edi850Generator {
 
   private generateTransactionBody(builder: X12Builder, input: PurchaseOrderInput) {
     // BEG: Beginning Segment
-    builder.addBEG('00', input.type, input.poNumber, input.poDate);
-
-    // Loop N1: Name
-    // Ship To (ST)
-    if (input.shipTo) {
-      builder.addN1('ST', input.shipTo.name, input.shipTo.code ? '92' : '', input.shipTo.code);
-      if (input.shipTo.address1) builder.addN3(input.shipTo.address1, input.shipTo.address2);
-      if (input.shipTo.city && input.shipTo.state && input.shipTo.zip) {
-        builder.addN4(input.shipTo.city, input.shipTo.state, input.shipTo.zip, input.shipTo.country);
-      }
+    const beg = input.beginningSegmentForPurchaseOrder?.[0];
+    if (beg) {
+       // Note: addBEG signature might need check, assuming (tset, type, poNum, date)
+       // Old usage: addBEG('00', input.type, input.poNumber, input.poDate)
+       // New: type=purchaseOrderTypeCode, num=purchaseOrderNumber
+       builder.addBEG('00', beg.purchaseOrderTypeCode, beg.purchaseOrderNumber, beg.date);
     }
 
-    // Bill To (BT)
-    if (input.buyer) {
-        builder.addN1('BT', input.buyer.name, input.buyer.code ? '92' : '', input.buyer.code);
-        if (input.buyer.address1) builder.addN3(input.buyer.address1, input.buyer.address2);
-        if (input.buyer.city && input.buyer.state && input.buyer.zip) {
-            builder.addN4(input.buyer.city, input.buyer.state, input.buyer.zip, input.buyer.country);
+    // N1 Loops
+    input.N1Loop?.forEach(loop => {
+        const n1 = loop.partyIdentification?.[0];
+        if (n1) {
+            builder.addN1(n1.entityIdentifierCode, n1.name || '', n1.identificationCodeQualifier || '', n1.identificationCode);
         }
-    }
-
-    // Vendor (VN)
-    if (input.vendor) {
-        builder.addN1('VN', input.vendor.name, input.vendor.code ? '92' : '', input.vendor.code);
-        if (input.vendor.address1) builder.addN3(input.vendor.address1, input.vendor.address2);
-        if (input.vendor.city && input.vendor.state && input.vendor.zip) {
-            builder.addN4(input.vendor.city, input.vendor.state, input.vendor.zip, input.vendor.country);
+        // N3 would go here
+        
+        const n4 = loop.geographicLocation?.[0];
+        if (n4) {
+            builder.addN4(n4.cityName || '', n4.stateOrProvinceCode || '', n4.postalCode || '', n4.countryCode || '');
         }
-    }
+    });
 
-    // Loop PO1: Items
-    input.items.forEach((item, index) => {
-      const lineNum = item.lineNumber || (index + 1);
-      builder.addPO1(lineNum, item.quantity, item.uom, item.price || 0, item.sku);
-      
-      // PID could go here for description
-      if (item.description) {
-          builder.addSegment('PID', 'F', '', '', '', item.description);
-      }
+    // PO1 Loops
+    input.P01Loop?.forEach((loop, index) => {
+        const po1 = loop.baselineItemData?.[0];
+        if (po1) {
+           const lineNum = po1.assignedIdentification ? parseInt(po1.assignedIdentification) : index + 1;
+           // addPO1(lineNum, qty, uom, price, sku)
+           builder.addPO1(lineNum, po1.quantityOrdered, po1.unitOfMeasurementCode, po1.unitPrice || 0, po1.productServiceID || '');
+           
+           // PID/Description could be extracted if added to schema
+        }
     });
 
     // CTT: Transaction Totals
-    builder.addCTT(input.items.length);
+    builder.addCTT(input.P01Loop?.length || 0);
   }
 }

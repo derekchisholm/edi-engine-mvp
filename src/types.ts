@@ -34,22 +34,56 @@ export const createStandardPayload = <T extends z.ZodTypeAny>(schema: T) => z.ob
 // --------------------------------------------------------------------------
 // 850 Purchase Order (Inbound/Outbound)
 // --------------------------------------------------------------------------
+const TransactionSetHeaderSchema = z.object({
+  transactionSetIdentifierCode: z.string(),
+  transactionSetControlNumber: z.string()
+});
+
+const BeginningSegmentForPurchaseOrderSchema = z.object({
+  purchaseOrderTypeCode: z.string(),
+  purchaseOrderNumber: z.string(),
+  releaseNumber: z.string().optional(),
+  date: z.string()
+});
+
+const BaselineItemDataSchema = z.object({
+  assignedIdentification: z.string().optional(),
+  productServiceIDQualifier: z.string().optional(),
+  productServiceID: z.string().optional(),
+  quantityOrdered: z.number(),
+  unitOfMeasurementCode: z.string(),
+  unitPrice: z.number().optional(),
+  basisOfUnitPriceCode: z.string().optional()
+});
+
+const P01LoopSchema = z.object({
+  baselineItemData: z.array(BaselineItemDataSchema).optional()
+});
+
+const N1LoopSchema = z.object({
+  partyIdentification: z.array(z.object({
+    entityIdentifierCode: z.string(),
+    name: z.string().optional(),
+    identificationCodeQualifier: z.string().optional(),
+    identificationCode: z.string().optional()
+  })).optional(),
+  partyLocation: z.array(z.object({
+    locationQualifier: z.string().optional(),
+    locationIdentifier: z.string().optional()
+  })).optional(),
+  geographicLocation: z.array(z.object({
+    cityName: z.string().optional(),
+    stateOrProvinceCode: z.string().optional(),
+    postalCode: z.string().optional(),
+    countryCode: z.string().optional()
+  })).optional()
+});
+
 export const PurchaseOrderSchema = z.object({
-  poNumber: z.string().min(1),
-  poDate: z.string().optional(), // ISO String (YYYY-MM-DD). Defaults to today.
-  type: z.string().default('NE'), // NE = New Order, SA = Stand-alone
-  
-  // Parties
-  buyer: AddressSchema.optional(), // Bill To (BT)
-  shipTo: AddressSchema, // Ship To (ST)
-  vendor: AddressSchema.optional(), // Vendor (VN) / Selling Party (SE)
-
-  // Details
-  currency: z.string().length(3).default('USD'),
-  paymentTerms: z.string().optional(),
-  notes: z.array(z.string()).optional(),
-
-  items: z.array(LineItemSchema).min(1)
+  transactionSetHeader: z.array(TransactionSetHeaderSchema).optional(),
+  beginningSegmentForPurchaseOrder: z.array(BeginningSegmentForPurchaseOrderSchema).optional(),
+  N1Loop: z.array(N1LoopSchema).optional(),
+  P01Loop: z.array(P01LoopSchema).optional()
 });
 
 export type PurchaseOrderInput = z.infer<typeof PurchaseOrderSchema>;

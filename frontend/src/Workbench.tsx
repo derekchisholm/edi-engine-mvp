@@ -27,9 +27,24 @@ export const Workbench = () => {
     setLoading(true);
     try {
       const payload: OrderData = {
-        poNumber: po,
-        shipTo: { name: "Acme Logistics", address1: "123 Business Rd", city: "Tech City", state: "CA", zip: "90210" },
-        items: [{ sku: sku, quantity: Number(qty) }]
+        transactionSetHeader: [{ transactionSetIdentifierCode: '940', transactionSetControlNumber: '0001' }],
+        beginningSegmentForPurchaseOrder: [{ 
+            purchaseOrderTypeCode: 'NE', 
+            purchaseOrderNumber: po, 
+            date: new Date().toISOString().slice(0, 10).replace(/-/g, '') 
+        }],
+        N1Loop: [{
+            partyIdentification: [{ entityIdentifierCode: 'ST', name: "Acme Logistics", identificationCodeQualifier: '92', identificationCode: 'STORE-001' }],
+            geographicLocation: [{ cityName: "Tech City", stateOrProvinceCode: "CA", postalCode: "90210", countryCode: "US" }]
+        }],
+        P01Loop: [{
+            baselineItemData: [{ 
+                quantityOrdered: Number(qty), 
+                unitOfMeasurementCode: 'EA', 
+                productServiceIDQualifier: 'VN', 
+                productServiceID: sku 
+            }]
+        }]
       };
       const result = await generateEdi940(payload);
       setOutput(result);
@@ -68,18 +83,28 @@ export const Workbench = () => {
     try {
       for (const [index, row] of mappedData.entries()) {
         const payload: OrderData = {
-            poNumber: row.poNumber || `BATCH-${index}`,
-            shipTo: { 
-              name: row.name || "Unknown", 
-              address1: row.address || "Unknown", // Mapped from CSV 'address' to JSON 'address1'
-              city: row.city || "Unknown", 
-              state: row.state || "Unknown", 
-              zip: row.zip || "00000" 
-            },
-            items: [{ sku: row.sku || "MISC", quantity: Number(row.quantity) || 1 }]
+            transactionSetHeader: [{ transactionSetIdentifierCode: '940', transactionSetControlNumber: String(index + 1).padStart(4, '0') }],
+            beginningSegmentForPurchaseOrder: [{ 
+                purchaseOrderTypeCode: 'NE', 
+                purchaseOrderNumber: row.poNumber || `BATCH-${index}`, 
+                date: new Date().toISOString().slice(0, 10).replace(/-/g, '') 
+            }],
+            N1Loop: [{
+                partyIdentification: [{ entityIdentifierCode: 'ST', name: row.name || "Unknown", identificationCodeQualifier: '92', identificationCode: 'STORE-UNKNOWN' }],
+                geographicLocation: [{ cityName: row.city || "Unknown", stateOrProvinceCode: row.state || "Unknown", postalCode: row.zip || "00000", countryCode: "US" }]
+            }],
+            P01Loop: [{
+                baselineItemData: [{ 
+                    quantityOrdered: Number(row.quantity) || 1, 
+                    unitOfMeasurementCode: 'EA', 
+                    productServiceIDQualifier: 'VN', 
+                    productServiceID: row.sku || "MISC" 
+                }]
+            }]
         };
         const result = await generateEdi940(payload);
-        bigOutput += `\n--- ORDER ${index + 1} (${payload.poNumber}) ---\n${result}`;
+        const poNum = payload.beginningSegmentForPurchaseOrder?.[0]?.purchaseOrderNumber;
+        bigOutput += `\n--- ORDER ${index + 1} (${poNum}) ---\n${result}`;
       }
       setOutput(bigOutput);
       setShowToast(true);

@@ -3,18 +3,50 @@ import { PurchaseOrderSchema } from './types';
 
 // 1. Simulate the "IT Admin" sending a JSON payload
 const incomingJson = {
-  poNumber: "PO-2025-001",
-  shipTo: {
-    name: "Acme Corp Logistics",
-    address1: "400 Enterprise Way",
-    city: "Carson City",
-    state: "NV",
-    zip: "89701",
-    country: "US"
-  },
-  items: [
-    { sku: "WIDGET-X550", quantity: 50, uom: "EA" },
-    { sku: "CABLE-CAT6", quantity: 200, uom: "EA" }
+  transactionSetHeader: [
+    {
+        transactionSetIdentifierCode: "850",
+        transactionSetControlNumber: "0001"
+    }
+  ],
+  beginningSegmentForPurchaseOrder: [
+    {
+        purchaseOrderTypeCode: "NE",
+        purchaseOrderNumber: "PO-2025-001",
+        date: "20250101"
+    }
+  ],
+  N1Loop: [
+    {
+        partyIdentification: [
+            { entityIdentifierCode: "ST", name: "Acme Corp Logistics", identificationCodeQualifier: "92", identificationCode: "STORE-001" }
+        ],
+        geographicLocation: [
+            { cityName: "Carson City", stateOrProvinceCode: "NV", postalCode: "89701", countryCode: "US" }
+        ]
+    }
+  ],
+  P01Loop: [
+    {
+        baselineItemData: [
+            { 
+                quantityOrdered: 50, 
+                unitOfMeasurementCode: "EA", 
+                productServiceID: "WIDGET-X550",
+                unitPrice: 12.50
+            }
+        ]
+    },
+    {
+        baselineItemData: [
+            { 
+                quantityOrdered: 200, 
+                unitOfMeasurementCode: "EA", 
+                productServiceID: "CABLE-CAT6",
+                unitPrice: 2.99
+            }
+        ]
+    }
   ]
 };
 

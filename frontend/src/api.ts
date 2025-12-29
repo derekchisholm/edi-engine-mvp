@@ -4,20 +4,40 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Updated to match backend PurchaseOrderSchema
 export interface OrderData {
-  poNumber: string;
-  shipTo: {
-    name: string;
-    address1: string;
-    address2?: string;
-    city: string;
-    state: string;
-    zip: string;
-    country?: string;
-  };
-  items: Array<{
-    sku: string;
-    quantity: number;
-    uom?: string;
+  transactionSetHeader?: Array<{
+    transactionSetIdentifierCode: string;
+    transactionSetControlNumber: string;
+  }>;
+  beginningSegmentForPurchaseOrder?: Array<{
+    purchaseOrderTypeCode: string;
+    purchaseOrderNumber: string;
+    releaseNumber?: string;
+    date: string;
+  }>;
+  N1Loop?: Array<{
+    partyIdentification?: Array<{
+      entityIdentifierCode: string;
+      name?: string;
+      identificationCodeQualifier?: string;
+      identificationCode?: string;
+    }>;
+    geographicLocation?: Array<{
+      cityName?: string;
+      stateOrProvinceCode?: string;
+      postalCode?: string;
+      countryCode?: string;
+    }>;
+  }>;
+  P01Loop?: Array<{
+    baselineItemData?: Array<{
+      assignedIdentification?: string;
+      productServiceIDQualifier?: string;
+      productServiceID?: string;
+      quantityOrdered: number;
+      unitOfMeasurementCode: string;
+      unitPrice?: number;
+      basisOfUnitPriceCode?: string;
+    }>;
   }>;
 }
 

@@ -52,7 +52,9 @@ export class EdiService {
       switch (type) {
         case '850': {
           const valid = PurchaseOrderPayloadSchema.parse(payload);
-          businessNum = valid.transactionSets.map(t => t.poNumber).join(', ');
+          businessNum = valid.transactionSets.map(t => 
+            t.beginningSegmentForPurchaseOrder?.[0]?.purchaseOrderNumber || 'UNKNOWN'
+          ).join(', ');
           if (businessNum.length > 100) businessNum = businessNum.substring(0, 97) + '...';
           result = new Edi850Generator().generate(valid, sender, receiver);
           break;
@@ -65,7 +67,7 @@ export class EdiService {
         }
         case '940': {
           const valid = PurchaseOrderSchema.parse(payload);
-          businessNum = valid.poNumber;
+          businessNum = valid.beginningSegmentForPurchaseOrder?.[0]?.purchaseOrderNumber || 'UNKNOWN';
           result = new Edi940Generator().generate(valid, sender, receiver);
           break;
         }
@@ -108,7 +110,7 @@ export class EdiService {
       switch (type) {
         case '850': {
           const parsed = new Edi850Parser().parse(ediContent);
-          businessNum = parsed.poNumber;
+          businessNum = parsed.beginningSegmentForPurchaseOrder?.[0]?.purchaseOrderNumber || 'UNKNOWN';
           result = parsed;
           break;
         }
