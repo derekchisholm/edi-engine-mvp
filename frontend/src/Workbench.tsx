@@ -3,7 +3,7 @@ import { generateEdi940, generateEdi997, parseEdi850, type OrderData, type AckDa
 import { FileMapper } from './FileMapper';
 
 export const Workbench = () => {
-  // --- Workbench State (Moved from App.tsx) ---
+  // --- Workbench State ---
   const [activeTab, setActiveTab] = useState<'940' | '997' | '850' | 'import'>('940');
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState<string>('');
@@ -28,10 +28,9 @@ export const Workbench = () => {
     try {
       const payload: OrderData = {
         poNumber: po,
-        shipTo: { name: "Acme Logistics", address: "123 Business Rd", city: "Tech City", state: "CA", zip: "90210" },
+        shipTo: { name: "Acme Logistics", address1: "123 Business Rd", city: "Tech City", state: "CA", zip: "90210" },
         items: [{ sku: sku, quantity: Number(qty) }]
       };
-      // Note: We assume the backend logs this to the DB automatically now
       const result = await generateEdi940(payload);
       setOutput(result);
     } catch (err) {
@@ -54,7 +53,7 @@ export const Workbench = () => {
   const handle850Parse = async () => {
     setLoading(true);
     try {
-      const dataToSend = rawX12 || `ISA*00*...`; // truncated for brevity
+      const dataToSend = rawX12 || `ISA*00*...`; 
       const result = await parseEdi850(dataToSend);
       setOutput(JSON.stringify(result, null, 2));
     } catch (err) {
@@ -70,7 +69,13 @@ export const Workbench = () => {
       for (const [index, row] of mappedData.entries()) {
         const payload: OrderData = {
             poNumber: row.poNumber || `BATCH-${index}`,
-            shipTo: { name: row.name || "Unknown", address: row.address || "Unknown", city: row.city || "Unknown", state: row.state || "Unknown", zip: row.zip || "00000" },
+            shipTo: { 
+              name: row.name || "Unknown", 
+              address1: row.address || "Unknown", // Mapped from CSV 'address' to JSON 'address1'
+              city: row.city || "Unknown", 
+              state: row.state || "Unknown", 
+              zip: row.zip || "00000" 
+            },
             items: [{ sku: row.sku || "MISC", quantity: Number(row.quantity) || 1 }]
         };
         const result = await generateEdi940(payload);

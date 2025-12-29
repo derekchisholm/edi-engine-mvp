@@ -4,13 +4,15 @@ import { Edi855Generator } from '../generators/855';
 import { Edi856Generator } from '../generators/856';
 import { Edi810Generator } from '../generators/810';
 import { Edi846Generator } from '../generators/846';
+import { Edi850Generator } from '../generators/850';
+import { Edi860Generator } from '../generators/860';
 import { Edi850Parser } from '../parsers/850';
 import { Edi820Parser } from '../parsers/820';
 import { Edi214Parser } from '../parsers/214';
 import { Edi180Parser } from '../parsers/180';
 import { Edi860Parser } from '../parsers/860';
 import {
-  OrderSchema, PoAckSchema, AsnSchema, InvoiceSchema,
+  PurchaseOrderSchema, PurchaseOrderPayloadSchema, PurchaseOrderChangeSchema, PoAckSchema, AsnSchema, InvoiceSchema,
   InventoryAdviceSchema
 } from '../types';
 import { getContainer } from '../db';
@@ -48,8 +50,21 @@ export class EdiService {
     // OUTBOUND (Generate EDI)
     if (direction === 'OUT') {
       switch (type) {
+        case '850': {
+          const valid = PurchaseOrderPayloadSchema.parse(payload);
+          businessNum = valid.transactionSets.map(t => t.poNumber).join(', ');
+          if (businessNum.length > 100) businessNum = businessNum.substring(0, 97) + '...';
+          result = new Edi850Generator().generate(valid, sender, receiver);
+          break;
+        }
+        case '860': {
+          const valid = PurchaseOrderChangeSchema.parse(payload);
+          businessNum = valid.changeOrderNumber || valid.poNumber;
+          result = new Edi860Generator().generate(valid, sender, receiver);
+          break;
+        }
         case '940': {
-          const valid = OrderSchema.parse(payload);
+          const valid = PurchaseOrderSchema.parse(payload);
           businessNum = valid.poNumber;
           result = new Edi940Generator().generate(valid, sender, receiver);
           break;
@@ -117,7 +132,7 @@ export class EdiService {
         }
         case '860': {
           const parsed = new Edi860Parser().parse(ediContent);
-          businessNum = parsed.changeNumber;
+          businessNum = parsed.changeOrderNumber || parsed.poNumber;
           result = parsed;
           break;
         }
@@ -150,15 +165,12 @@ export class EdiService {
     try {
       const container = getContainer();
       
-      // If we are Buyer (Consumer):
-      // INBOUND: Partner is the Sender
-      // OUTBOUND: Partner is the Receiver
       const partner = data.direction === 'IN' ? data.sender : data.receiver;
 
       const record = {
         ...data,
         id: `${data.type}-${Date.now()}`,
-        stream: 'Test', // Could be inferred from Sender/Receiver if we had a registry
+        stream: 'Test', 
         validation: 'Valid',
         ackStatus: 'Not Acknowledged',
         partner: partner,

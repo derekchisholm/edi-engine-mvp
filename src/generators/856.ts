@@ -47,8 +47,10 @@ export class Edi856Generator {
     // ST = Ship To
     builder.addSegment('N1', 'ST', input.shipTo.name); 
     segmentCount++;
-    builder.addSegment('N3', input.shipTo.address);
-    segmentCount++;
+    if (input.shipTo.address1) {
+      builder.addSegment('N3', input.shipTo.address1);
+      segmentCount++;
+    }
     builder.addSegment('N4', input.shipTo.city, input.shipTo.state, input.shipTo.zip);
     segmentCount++;
 

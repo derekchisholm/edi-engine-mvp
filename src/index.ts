@@ -1,25 +1,26 @@
 import { Edi940Generator } from './translator';
-import { OrderSchema } from './types';
+import { PurchaseOrderSchema } from './types';
 
 // 1. Simulate the "IT Admin" sending a JSON payload
 const incomingJson = {
   poNumber: "PO-2025-001",
   shipTo: {
     name: "Acme Corp Logistics",
-    address: "400 Enterprise Way",
+    address1: "400 Enterprise Way",
     city: "Carson City",
     state: "NV",
-    zip: "89701"
+    zip: "89701",
+    country: "US"
   },
   items: [
-    { sku: "WIDGET-X550", quantity: 50 },
-    { sku: "CABLE-CAT6", quantity: 200 }
+    { sku: "WIDGET-X550", quantity: 50, uom: "EA" },
+    { sku: "CABLE-CAT6", quantity: 200, uom: "EA" }
   ]
 };
 
 try {
   // 2. Validate the input (Zod magic)
-  const validatedOrder = OrderSchema.parse(incomingJson);
+  const validatedOrder = PurchaseOrderSchema.parse(incomingJson);
   console.log("✅ JSON Validation Passed");
 
   // 3. Generate the X12
