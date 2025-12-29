@@ -58,7 +58,7 @@ const start = async () => {
     await server.register(ScalarApiReference, {
       routePrefix: '/documentation',
       configuration: {
-        theme: 'deepSpace',
+        theme: 'solarized',
         spec: {
           content: () => server.swagger(),
         },
