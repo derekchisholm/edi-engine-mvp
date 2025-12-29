@@ -46,6 +46,95 @@ const BeginningSegmentForPurchaseOrderSchema = z.object({
   date: z.string()
 });
 
+const CurrencySchema = z.object({
+  entityIdentifierCode: z.string(),
+  currencyCode: z.string(),
+  exchangeRate: z.string().optional(),
+  entityIdentifierCode2: z.string().optional(),
+  currencyCode2: z.string().optional()
+});
+
+const ReferenceIdentificationSchema = z.object({
+  referenceIdentificationQualifier: z.string(),
+  referenceIdentification: z.string(),
+  description: z.string().optional()
+});
+
+const AdministrativeCommunicationsContactSchema = z.object({
+  contactFunctionCode: z.string(),
+  name: z.string().optional(),
+  communicationNumberQualifier: z.string().optional(),
+  communicationNumber: z.string().optional(),
+  communicationNumberQualifier2: z.string().optional(),
+  communicationNumber2: z.string().optional(),
+  communicationNumberQualifier3: z.string().optional(),
+  communicationNumber3: z.string().optional()
+});
+
+const TaxReferenceSchema = z.object({
+  taxIdentificationNumber: z.string(),
+  locationQualifier: z.string().optional(),
+  locationIdentifier: z.string().optional()
+});
+
+const FobRelatedInstructionsSchema = z.object({
+  shipmentMethodOfPayment: z.string(),
+  locationQualifier: z.string().optional(),
+  description: z.string().optional()
+});
+
+const PricingInformationSchema = z.object({
+  classOfTradeCode: z.string().optional(),
+  priceIdentifierCode: z.string().optional(),
+  unitPrice: z.number().optional(),
+  quantity: z.number().optional(),
+  unitOfMeasurementCode: z.string().optional()
+});
+
+const PeriodAmountSchema = z.object({
+  amountQualifierCode: z.string().optional(),
+  monetaryAmount: z.number().optional(),
+  unitOfTimePeriodOrInterval: z.string().optional(),
+  dateTimeQualifier: z.string().optional(),
+  date: z.string().optional()
+});
+
+const SalesRequirementsSchema = z.object({
+  salesRequirementCode: z.string().optional()
+});
+
+const ServicePromotionAllowanceChargeInformationSchema = z.object({
+  allowanceOrChargeIndicator: z.string(),
+  servicePromotionAllowanceOrChargeCode: z.string().optional(),
+  amount: z.number().optional()
+});
+
+const TermsOfSaleDeferredTermsOfSaleSchema = z.object({
+  termsTypeCode: z.string().optional(),
+  termsBasisDateCode: z.string().optional(),
+  termsDiscountPercent: z.number().optional(),
+  termsDiscountDueDate: z.string().optional(),
+  termsDiscountDaysDue: z.number().optional(),
+  termsNetDueDate: z.string().optional(),
+  termsNetDays: z.number().optional(),
+  termsDiscountAmount: z.number().optional()
+});
+
+const DateTimeReferenceSchema = z.object({
+  dateTimeQualifier: z.string(),
+  date: z.string().optional(),
+  time: z.string().optional(),
+  timeCode: z.string().optional()
+});
+
+const CarrierDetailsSchema = z.object({
+  routingSequenceCode: z.string().optional(),
+  identificationCodeQualifier: z.string().optional(),
+  identificationCode: z.string().optional(),
+  transportationMethodTypeCode: z.string().optional(),
+  routing: z.string().optional()
+});
+
 const BaselineItemDataSchema = z.object({
   assignedIdentification: z.string().optional(),
   productServiceIDQualifier: z.string().optional(),
@@ -82,6 +171,18 @@ const N1LoopSchema = z.object({
 export const PurchaseOrderSchema = z.object({
   transactionSetHeader: z.array(TransactionSetHeaderSchema).optional(),
   beginningSegmentForPurchaseOrder: z.array(BeginningSegmentForPurchaseOrderSchema).optional(),
+  currency: z.array(CurrencySchema).optional(),
+  referenceIdentification: z.array(ReferenceIdentificationSchema).optional(),
+  administrativeCommunicationsContact: z.array(AdministrativeCommunicationsContactSchema).optional(),
+  taxReference: z.array(TaxReferenceSchema).optional(),
+  fobRelatedInstructions: z.array(FobRelatedInstructionsSchema).optional(),
+  pricingInformation: z.array(PricingInformationSchema).optional(),
+  periodAmount: z.array(PeriodAmountSchema).optional(),
+  salesRequirements: z.array(SalesRequirementsSchema).optional(),
+  servicePromotionAllowanceChargeInformation: z.array(ServicePromotionAllowanceChargeInformationSchema).optional(),
+  termsOfSaleDeferredTermsOfSale: z.array(TermsOfSaleDeferredTermsOfSaleSchema).optional(),
+  dateTimeReference: z.array(DateTimeReferenceSchema).optional(),
+  carrierDetails: z.array(CarrierDetailsSchema).optional(),
   N1Loop: z.array(N1LoopSchema).optional(),
   P01Loop: z.array(P01LoopSchema).optional()
 });

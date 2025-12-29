@@ -8,6 +8,18 @@ export class Edi850Parser {
     const po: PurchaseOrderInput = {
       transactionSetHeader: [],
       beginningSegmentForPurchaseOrder: [],
+      currency: [],
+      referenceIdentification: [],
+      administrativeCommunicationsContact: [],
+      taxReference: [],
+      fobRelatedInstructions: [],
+      pricingInformation: [],
+      periodAmount: [],
+      salesRequirements: [],
+      servicePromotionAllowanceChargeInformation: [],
+      termsOfSaleDeferredTermsOfSale: [],
+      dateTimeReference: [],
+      carrierDetails: [],
       N1Loop: [],
       P01Loop: []
     };
@@ -28,12 +40,6 @@ export class Edi850Parser {
            break;
 
         case 'BEG': // Beginning of PO
-          // BEG*00*NE*PO-12345**20231027...
-          // BEG01: Trans Set Purpose Code (00)
-          // BEG02: PO Type Code (NE)
-          // BEG03: PO Number
-          // BEG04: Release Number
-          // BEG05: Date
           po.beginningSegmentForPurchaseOrder?.push({
               purchaseOrderTypeCode: elements[2],
               purchaseOrderNumber: elements[3],
@@ -42,8 +48,121 @@ export class Edi850Parser {
           });
           break;
 
+        case 'CUR':
+           po.currency?.push({
+               entityIdentifierCode: elements[1],
+               currencyCode: elements[2],
+               exchangeRate: elements[3],
+               entityIdentifierCode2: elements[4],
+               currencyCode2: elements[5]
+           });
+           break;
+
+        case 'REF':
+           po.referenceIdentification?.push({
+               referenceIdentificationQualifier: elements[1],
+               referenceIdentification: elements[2],
+               description: elements[3]
+           });
+           break;
+
+        case 'PER':
+           po.administrativeCommunicationsContact?.push({
+               contactFunctionCode: elements[1],
+               name: elements[2],
+               communicationNumberQualifier: elements[3],
+               communicationNumber: elements[4],
+               communicationNumberQualifier2: elements[5],
+               communicationNumber2: elements[6],
+               communicationNumberQualifier3: elements[7],
+               communicationNumber3: elements[8]
+           });
+           break;
+
+        case 'TAX':
+           po.taxReference?.push({
+               taxIdentificationNumber: elements[1],
+               locationQualifier: elements[2],
+               locationIdentifier: elements[3]
+           });
+           break;
+
+        case 'FOB':
+           po.fobRelatedInstructions?.push({
+               shipmentMethodOfPayment: elements[1],
+               locationQualifier: elements[2],
+               description: elements[3]
+           });
+           break;
+
+        case 'CTP':
+           po.pricingInformation?.push({
+               classOfTradeCode: elements[1],
+               priceIdentifierCode: elements[2],
+               unitPrice: elements[3] ? parseFloat(elements[3]) : undefined,
+               quantity: elements[4] ? parseFloat(elements[4]) : undefined,
+               unitOfMeasurementCode: elements[5]
+           });
+           break;
+
+        case 'PAM':
+           po.periodAmount?.push({
+               amountQualifierCode: elements[1],
+               monetaryAmount: elements[2] ? parseFloat(elements[2]) : undefined,
+               unitOfTimePeriodOrInterval: elements[3],
+               dateTimeQualifier: elements[4],
+               date: elements[5]
+           });
+           break;
+
+        case 'CSH':
+           po.salesRequirements?.push({
+               salesRequirementCode: elements[1]
+           });
+           break;
+
+        case 'SAC':
+           po.servicePromotionAllowanceChargeInformation?.push({
+               allowanceOrChargeIndicator: elements[1],
+               servicePromotionAllowanceOrChargeCode: elements[2],
+               amount: elements[5] ? parseFloat(elements[5]) : undefined
+               // Note: Elements 3 & 4 (Agency, Agency Code) skipped in this simple parser
+           });
+           break;
+
+        case 'ITD':
+           po.termsOfSaleDeferredTermsOfSale?.push({
+               termsTypeCode: elements[1],
+               termsBasisDateCode: elements[2],
+               termsDiscountPercent: elements[3] ? parseFloat(elements[3]) : undefined,
+               termsDiscountDueDate: elements[4],
+               termsDiscountDaysDue: elements[5] ? parseInt(elements[5]) : undefined,
+               termsNetDueDate: elements[6],
+               termsNetDays: elements[7] ? parseInt(elements[7]) : undefined,
+               termsDiscountAmount: elements[8] ? parseFloat(elements[8]) : undefined
+           });
+           break;
+
+        case 'DTM':
+           po.dateTimeReference?.push({
+               dateTimeQualifier: elements[1],
+               date: elements[2],
+               time: elements[3],
+               timeCode: elements[4]
+           });
+           break;
+
+        case 'TD5':
+           po.carrierDetails?.push({
+               routingSequenceCode: elements[1],
+               identificationCodeQualifier: elements[2],
+               identificationCode: elements[3],
+               transportationMethodTypeCode: elements[4],
+               routing: elements[5]
+           });
+           break;
+
         case 'N1': // Name Loop
-          // N1*ST*My Store*92*STORE-001
           currentN1Loop = {
               partyIdentification: [{
                   entityIdentifierCode: elements[1],
@@ -52,13 +171,11 @@ export class Edi850Parser {
                   identificationCode: elements[4]
               }],
               geographicLocation: []
-              // partyLocation (N3) omitted for now as per schema simplification or added if needed
           };
           po.N1Loop?.push(currentN1Loop);
           break;
 
         case 'N4': // Geo
-           // N4*City*State*Zip*Country
            if (currentN1Loop) {
              currentN1Loop.geographicLocation.push({
                  cityName: elements[1],
@@ -70,15 +187,6 @@ export class Edi850Parser {
            break;
 
         case 'PO1': // Line Item
-          // PO1*LINENUM*QTY*UOM*PRICE*BASIS*VN*SKU...
-          // elements[1] assignedId
-          // elements[2] quantity
-          // elements[3] uom
-          // elements[4] price
-          // elements[5] basis code
-          // elements[6] qualifier (VN)
-          // elements[7] id (SKU)
-          
           let sku = '';
           const vnIndex = elements.indexOf('VN');
           if (vnIndex > -1) {

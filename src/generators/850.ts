@@ -32,11 +32,68 @@ export class Edi850Generator {
     // BEG: Beginning Segment
     const beg = input.beginningSegmentForPurchaseOrder?.[0];
     if (beg) {
-       // Note: addBEG signature might need check, assuming (tset, type, poNum, date)
-       // Old usage: addBEG('00', input.type, input.poNumber, input.poDate)
-       // New: type=purchaseOrderTypeCode, num=purchaseOrderNumber
        builder.addBEG('00', beg.purchaseOrderTypeCode, beg.purchaseOrderNumber, beg.date);
     }
+
+    // CUR: Currency
+    input.currency?.forEach(cur => {
+        builder.addSegment('CUR', cur.entityIdentifierCode, cur.currencyCode, cur.exchangeRate, cur.entityIdentifierCode2, cur.currencyCode2);
+    });
+
+    // REF: Reference Identification
+    input.referenceIdentification?.forEach(ref => {
+        builder.addSegment('REF', ref.referenceIdentificationQualifier, ref.referenceIdentification, ref.description);
+    });
+
+    // PER: Administrative Communications Contact
+    input.administrativeCommunicationsContact?.forEach(per => {
+        builder.addSegment('PER', per.contactFunctionCode, per.name, per.communicationNumberQualifier, per.communicationNumber, per.communicationNumberQualifier2, per.communicationNumber2, per.communicationNumberQualifier3, per.communicationNumber3);
+    });
+
+    // TAX: Tax Reference
+    input.taxReference?.forEach(tax => {
+        builder.addSegment('TAX', tax.taxIdentificationNumber, tax.locationQualifier, tax.locationIdentifier);
+    });
+
+    // FOB: F.O.B. Related Instructions
+    input.fobRelatedInstructions?.forEach(fob => {
+        builder.addSegment('FOB', fob.shipmentMethodOfPayment, fob.locationQualifier, fob.description);
+    });
+
+    // CTP: Pricing Information
+    input.pricingInformation?.forEach(ctp => {
+        builder.addSegment('CTP', ctp.classOfTradeCode, ctp.priceIdentifierCode, ctp.unitPrice, ctp.quantity, ctp.unitOfMeasurementCode);
+    });
+
+    // PAM: Period Amount
+    input.periodAmount?.forEach(pam => {
+        builder.addSegment('PAM', pam.amountQualifierCode, pam.monetaryAmount, pam.unitOfTimePeriodOrInterval, pam.dateTimeQualifier, pam.date);
+    });
+
+    // CSH: Sales Requirements
+    input.salesRequirements?.forEach(csh => {
+        builder.addSegment('CSH', csh.salesRequirementCode);
+    });
+
+    // SAC: Service, Promotion, Allowance, or Charge Information
+    input.servicePromotionAllowanceChargeInformation?.forEach(sac => {
+        builder.addSegment('SAC', sac.allowanceOrChargeIndicator, sac.servicePromotionAllowanceOrChargeCode, '', '', sac.amount); // Note: Skipping optional elements between code and amount for simplicity based on schema
+    });
+
+    // ITD: Terms of Sale/Deferred Terms of Sale
+    input.termsOfSaleDeferredTermsOfSale?.forEach(itd => {
+        builder.addSegment('ITD', itd.termsTypeCode, itd.termsBasisDateCode, itd.termsDiscountPercent, itd.termsDiscountDueDate, itd.termsDiscountDaysDue, itd.termsNetDueDate, itd.termsNetDays, itd.termsDiscountAmount);
+    });
+
+    // DTM: Date/Time Reference
+    input.dateTimeReference?.forEach(dtm => {
+        builder.addSegment('DTM', dtm.dateTimeQualifier, dtm.date, dtm.time, dtm.timeCode);
+    });
+
+    // TD5: Carrier Details
+    input.carrierDetails?.forEach(td5 => {
+        builder.addSegment('TD5', td5.routingSequenceCode, td5.identificationCodeQualifier, td5.identificationCode, td5.transportationMethodTypeCode, td5.routing);
+    });
 
     // N1 Loops
     input.N1Loop?.forEach(loop => {
