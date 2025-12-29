@@ -1,9 +1,14 @@
-import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import Fastify from 'fastify';
 import { z } from 'zod';
 import { Edi940Generator } from './translator';
 import { Edi997Generator, AckInput } from './generators/997';
+import { Edi855Generator } from './generators/855';
+import { Edi856Generator } from './generators/856';
+import { Edi810Generator } from './generators/810';
 import { Edi850Parser } from './parsers/850';
-import { OrderSchema, OrderInput } from './types';
+import { Edi820Parser } from './parsers/820';
+import { OrderSchema, OrderInput, PoAckSchema, AsnSchema, InvoiceSchema, PoAckInput, AsnInput, InvoiceInput } from './types';
 import { initDb, getContainer } from './db';
 import cors from '@fastify/cors';
 
@@ -105,6 +110,109 @@ server.post('/api/v1/parse-850', async (request: FastifyRequest, reply: FastifyR
   }
 });
 
+server.post('/api/v1/generate-855', async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const body = request.body;
+    const validated = PoAckSchema.parse(body);
+    const generator = new Edi855Generator();
+    const ediOutput = generator.generate(validated, "MYBUSINESS", "PARTNER");
+
+    await logTransaction({
+      type: '855',
+      direction: 'OUT',
+      businessNum: validated.poNumber,
+      payload: ediOutput
+    });
+
+    reply.type('text/plain');
+    return ediOutput;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      reply.status(400).send({ error: "Validation Failed", details: error.issues });
+    } else {
+      request.log.error(error);
+      reply.status(500).send({ error: "Internal Server Error" });
+    }
+  }
+});
+
+server.post('/api/v1/generate-856', async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const body = request.body;
+    const validated = AsnSchema.parse(body);
+    const generator = new Edi856Generator();
+    const ediOutput = generator.generate(validated, "MYBUSINESS", "PARTNER");
+
+    await logTransaction({
+      type: '856',
+      direction: 'OUT',
+      businessNum: validated.shipmentId,
+      payload: ediOutput
+    });
+
+    reply.type('text/plain');
+    return ediOutput;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      reply.status(400).send({ error: "Validation Failed", details: error.issues });
+    } else {
+      request.log.error(error);
+      reply.status(500).send({ error: "Internal Server Error" });
+    }
+  }
+});
+
+server.post('/api/v1/generate-810', async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const body = request.body;
+    const validated = InvoiceSchema.parse(body);
+    const generator = new Edi810Generator();
+    const ediOutput = generator.generate(validated, "MYBUSINESS", "PARTNER");
+
+    await logTransaction({
+      type: '810',
+      direction: 'OUT',
+      businessNum: validated.invoiceNumber,
+      payload: ediOutput
+    });
+
+    reply.type('text/plain');
+    return ediOutput;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      reply.status(400).send({ error: "Validation Failed", details: error.issues });
+    } else {
+      request.log.error(error);
+      reply.status(500).send({ error: "Internal Server Error" });
+    }
+  }
+});
+
+server.post('/api/v1/parse-820', async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const body = request.body as string;
+    if (!body.includes('ISA*')) {
+      return reply.status(400).send({ error: "Invalid X12 format" });
+    }
+
+    const parser = new Edi820Parser();
+    const jsonOutput = parser.parse(body);
+
+    await logTransaction({
+      type: '820', // Note: This needs to be added to the Transaction type definition if strict
+      direction: 'IN',
+      businessNum: jsonOutput.paymentNumber,
+      payload: jsonOutput
+    });
+
+    reply.type('application/json');
+    return jsonOutput;
+  } catch (error) {
+    request.log.error(error);
+    reply.status(500).send({ error: "Internal Server Error" });
+  }
+});
+
 // SAVE ORDER (From 850 Parser)
 server.post('/api/v1/orders', async (request, reply) => {
   try {
@@ -161,7 +269,7 @@ server.get('/api/v1/transactions', async (request, reply) => {
 });
 
 const logTransaction = async (data: {
-  type: '850' | '940' | '997';
+  type: '850' | '940' | '997' | '855' | '856' | '810' | '820';
   direction: 'IN' | 'OUT';
   businessNum: string;
   payload: any;
